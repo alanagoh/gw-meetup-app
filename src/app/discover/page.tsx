@@ -48,6 +48,18 @@ export default function DiscoverPage() {
     });
   }, [router]);
 
+  // Load existing sent waves so cards show correct state
+  useEffect(() => {
+    fetch("/api/waves?type=sent")
+      .then((r) => r.json())
+      .then((waves) => {
+        if (Array.isArray(waves)) {
+          setWavedIds(new Set(waves.map((w: { to_user_profile?: { id: string } }) => w.to_user_profile?.id).filter((id): id is string => Boolean(id))));
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   const fetchProfiles = useCallback(async (reset = false) => {
     const currentOffset = reset ? 0 : offset;
     if (reset) setLoading(true); else setLoadingMore(true);
