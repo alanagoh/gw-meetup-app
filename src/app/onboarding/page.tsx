@@ -124,6 +124,10 @@ export default function OnboardingPage() {
       }
 
       const profile = await res.json();
+
+      // Fire-and-forget match computation — don't await
+      fetch("/api/matching/compute", { method: "POST" }).catch(() => {});
+
       router.push(`/onboarding/title?title=${encodeURIComponent(profile.claude_title || "")}`);
     } catch {
       setError("Something went wrong. Please try again.");
