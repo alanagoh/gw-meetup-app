@@ -52,6 +52,7 @@ export async function POST(request: Request) {
       mcp_servers_skills: mcp_servers_skills?.trim().slice(0, 500) || null,
       linkedin_url: linkedin_url?.trim() || null,
       share_email: share_email ?? false,
+      email: user.email ?? null,
       discoverable: discoverable ?? true,
       photo_url: photo_url || null,
     })

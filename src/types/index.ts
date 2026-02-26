@@ -15,6 +15,9 @@ export interface Profile {
   discoverable: boolean;
   is_beacon_active: boolean;
   beacon_activated_at: string | null;
+  beacon_totem: string | null;
+  beacon_color: string | null;
+  beacon_bg: string | null;
   primary_tag: string | null;
   created_at: string;
   updated_at: string;
