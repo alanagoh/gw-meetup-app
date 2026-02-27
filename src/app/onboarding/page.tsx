@@ -31,7 +31,8 @@ export default function OnboardingPage() {
   const [selectedLookingFor, setSelectedLookingFor] = useState<string[]>([]);
   const [claudeMd, setClaudeMd] = useState("");
   const [coolThing, setCoolThing] = useState("");
-  const [mcpSkills, setMcpSkills] = useState("");
+  const [aiProfileMode, setAiProfileMode] = useState<"claude_md" | "prompt">("claude_md");
+  const [copied, setCopied] = useState(false);
   const [linkedinUrl, setLinkedinUrl] = useState("");
   const [shareEmail, setShareEmail] = useState(false);
   const [discoverable, setDiscoverable] = useState(true);
@@ -109,7 +110,7 @@ export default function OnboardingPage() {
           looking_for: selectedLookingFor,
           claude_md_snippet: claudeMd || null,
           cool_thing: coolThing || null,
-          mcp_servers_skills: mcpSkills || null,
+          mcp_servers_skills: null,
           linkedin_url: linkedinUrl || null,
           share_email: shareEmail,
           discoverable,
@@ -188,7 +189,6 @@ export default function OnboardingPage() {
               ref={fileInputRef}
               type="file"
               accept="image/*"
-              capture="user"
               onChange={handlePhotoChange}
               className="hidden"
             />
@@ -348,30 +348,83 @@ export default function OnboardingPage() {
             </div>
 
             <div>
-              <label className="text-sm text-text-secondary mb-1.5 block">
-                MCP servers / Claude tools you use
+              <label className="text-sm text-text-secondary mb-2 block">
+                How do you build with AI?
               </label>
-              <input
-                type="text"
-                value={mcpSkills}
-                onChange={(e) => setMcpSkills(e.target.value.slice(0, 500))}
-                placeholder="filesystem, browser-use, custom RAG server..."
-                className="w-full px-4 py-3 bg-bg-secondary border border-border-subtle rounded-xl text-text-primary placeholder:text-text-secondary focus:outline-none focus:border-accent-primary transition-colors"
-              />
-            </div>
+              <p className="text-xs text-text-secondary mb-3">
+                Help us understand your vibe so we can match you better
+              </p>
 
-            <div>
-              <label className="text-sm text-text-secondary mb-1.5 block">
-                Snippet from your claude.md
-              </label>
-              <textarea
-                value={claudeMd}
-                onChange={(e) => setClaudeMd(e.target.value.slice(0, 2000))}
-                placeholder="Paste a section of your CLAUDE.md or project instructions..."
-                rows={3}
-                className="w-full px-4 py-3 bg-bg-secondary border border-border-subtle rounded-xl text-text-primary placeholder:text-text-secondary focus:outline-none focus:border-accent-primary transition-colors resize-none font-mono text-xs"
-              />
-              <p className="text-text-secondary text-xs mt-1 text-right">{claudeMd.length}/2000</p>
+              {/* Toggle between modes */}
+              <div className="flex gap-2 mb-3">
+                <button
+                  onClick={() => setAiProfileMode("claude_md")}
+                  className="flex-1 px-3 py-2 rounded-lg text-xs font-medium transition-all"
+                  style={{
+                    background: aiProfileMode === "claude_md" ? "rgba(220, 107, 47, 0.12)" : "var(--bg-elevated)",
+                    color: aiProfileMode === "claude_md" ? "var(--accent-primary)" : "var(--text-secondary)",
+                    border: `1px solid ${aiProfileMode === "claude_md" ? "var(--accent-primary)" : "var(--border-subtle)"}`,
+                  }}
+                >
+                  Paste your CLAUDE.md
+                </button>
+                <button
+                  onClick={() => setAiProfileMode("prompt")}
+                  className="flex-1 px-3 py-2 rounded-lg text-xs font-medium transition-all"
+                  style={{
+                    background: aiProfileMode === "prompt" ? "rgba(220, 107, 47, 0.12)" : "var(--bg-elevated)",
+                    color: aiProfileMode === "prompt" ? "var(--accent-primary)" : "var(--text-secondary)",
+                    border: `1px solid ${aiProfileMode === "prompt" ? "var(--accent-primary)" : "var(--border-subtle)"}`,
+                  }}
+                >
+                  Ask your AI agent
+                </button>
+              </div>
+
+              {aiProfileMode === "claude_md" ? (
+                <div>
+                  <textarea
+                    value={claudeMd}
+                    onChange={(e) => setClaudeMd(e.target.value.slice(0, 2000))}
+                    placeholder="Paste a section of your CLAUDE.md or project instructions..."
+                    rows={3}
+                    className="w-full px-4 py-3 bg-bg-secondary border border-border-subtle rounded-xl text-text-primary placeholder:text-text-secondary focus:outline-none focus:border-accent-primary transition-colors resize-none font-mono text-xs"
+                  />
+                  <p className="text-text-secondary text-xs mt-1 text-right">{claudeMd.length}/2000</p>
+                </div>
+              ) : (
+                <div>
+                  <p className="text-xs text-text-secondary mb-2">
+                    Copy this prompt, paste it into your AI agent (Claude, ChatGPT, Cursor, etc.), then paste the response below:
+                  </p>
+                  <div
+                    className="relative rounded-lg p-3 mb-3 font-mono text-xs cursor-pointer group"
+                    style={{ background: "var(--bg-elevated)", border: "1px solid var(--border-subtle)" }}
+                    onClick={() => {
+                      navigator.clipboard.writeText(
+                        "Given our past working style, how would you describe our working relationship in terms of building software together? Focus on: what I tend to build, how I like to work, my technical strengths, and what kind of collaborator I am. Keep it under 2000 characters."
+                      );
+                      setCopied(true);
+                      setTimeout(() => setCopied(false), 2000);
+                    }}
+                  >
+                    <p className="text-text-secondary pr-8 leading-relaxed">
+                      &quot;Given our past working style, how would you describe our working relationship in terms of building software together? Focus on: what I tend to build, how I like to work, my technical strengths, and what kind of collaborator I am. Keep it under 2000 characters.&quot;
+                    </p>
+                    <span className="absolute top-2 right-2 text-text-secondary group-hover:text-accent-primary transition-colors">
+                      {copied ? "Copied!" : "Copy"}
+                    </span>
+                  </div>
+                  <textarea
+                    value={claudeMd}
+                    onChange={(e) => setClaudeMd(e.target.value.slice(0, 2000))}
+                    placeholder="Paste your AI agent's response here..."
+                    rows={3}
+                    className="w-full px-4 py-3 bg-bg-secondary border border-border-subtle rounded-xl text-text-primary placeholder:text-text-secondary focus:outline-none focus:border-accent-primary transition-colors resize-none font-mono text-xs"
+                  />
+                  <p className="text-text-secondary text-xs mt-1 text-right">{claudeMd.length}/2000</p>
+                </div>
+              )}
             </div>
 
             <div>

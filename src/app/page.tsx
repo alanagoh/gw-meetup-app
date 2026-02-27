@@ -164,7 +164,7 @@ export default function LandingPage() {
           className="text-text-secondary text-sm mb-8 max-w-[280px] animate-fade-up"
           style={{ animationDelay: "300ms", animationFillMode: "both" }}
         >
-          AI-powered matching to help you find the right people in a room of 800.
+          AI-powered matching to help you find the right people in the room.
         </p>
 
         {/* CTA */}
@@ -253,20 +253,6 @@ export default function LandingPage() {
           ))}
         </div>
 
-        {/* Bottom CTA */}
-        <Link
-          href="/auth/login"
-          className="mt-8 w-full inline-flex items-center justify-center py-4 rounded-2xl font-semibold text-sm transition-all hover:opacity-90 animate-fade-up"
-          style={{
-            background: "var(--bg-elevated)",
-            border: "1px solid var(--border-hover)",
-            color: "var(--text-primary)",
-            animationDelay: "900ms",
-            animationFillMode: "both",
-          }}
-        >
-          Scan. Sign up. Start matching. →
-        </Link>
       </div>
     </div>
   );
