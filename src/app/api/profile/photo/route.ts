@@ -19,9 +19,14 @@ export async function POST(request: Request) {
   const ext = file.type === "image/png" ? "png" : "jpg";
   const path = `${user.id}/avatar.${ext}`;
 
+  // Convert File to Buffer — the Node.js File from formData is not
+  // reliably handled by the Supabase storage client.
+  const arrayBuffer = await file.arrayBuffer();
+  const buffer = Buffer.from(arrayBuffer);
+
   const { error } = await supabase.storage
     .from("avatars")
-    .upload(path, file, { upsert: true, contentType: file.type });
+    .upload(path, buffer, { upsert: true, contentType: file.type });
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -31,5 +36,8 @@ export async function POST(request: Request) {
     .from("avatars")
     .getPublicUrl(path);
 
-  return NextResponse.json({ url: publicUrl });
+  // Append cache-buster so browsers fetch the new image after re-upload
+  const url = `${publicUrl}?t=${Date.now()}`;
+
+  return NextResponse.json({ url });
 }
