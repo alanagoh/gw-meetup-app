@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
- * Applies the avatars storage bucket + RLS policies to your Supabase project.
- * Run once: node scripts/apply-storage-policies.mjs
+ * Ensures the Supabase 'avatars' storage bucket exists and is public.
+ * Run once after cloning: node scripts/apply-storage-policies.mjs
  *
  * Requires .env.local with:
  *   NEXT_PUBLIC_SUPABASE_URL
@@ -11,12 +11,13 @@
 import { readFileSync } from "fs";
 import { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
+import { createClient } from "@supabase/supabase-js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-// Load .env.local manually (no dotenv dependency needed)
+// Load .env.local manually (no dotenv dependency)
 const envPath = resolve(__dirname, "../.env.local");
-let envVars = {};
+const envVars = {};
 try {
   const raw = readFileSync(envPath, "utf8");
   for (const line of raw.split("\n")) {
@@ -33,68 +34,34 @@ try {
   process.exit(1);
 }
 
-const SUPABASE_URL = envVars.NEXT_PUBLIC_SUPABASE_URL;
-const SERVICE_ROLE_KEY = envVars.SUPABASE_SERVICE_ROLE_KEY;
-
-if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
-  console.error(
-    "Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY in .env.local"
-  );
+const { NEXT_PUBLIC_SUPABASE_URL: url, SUPABASE_SERVICE_ROLE_KEY: key } = envVars;
+if (!url || !key) {
+  console.error("Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY");
   process.exit(1);
 }
 
-const sql = readFileSync(
-  resolve(__dirname, "../supabase/migrations/20260227_avatars_storage_policies.sql"),
-  "utf8"
-);
+const supabase = createClient(url, key, {
+  auth: { autoRefreshToken: false, persistSession: false },
+});
 
-// Split on semicolons, run each statement individually
-const statements = sql
-  .split(";")
-  .map((s) => s.trim())
-  .filter((s) => s.length > 0);
-
-console.log(`Applying ${statements.length} SQL statements to ${SUPABASE_URL}...\n`);
-
-for (const statement of statements) {
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/exec_sql`, {
-    method: "POST",
-    headers: {
-      apikey: SERVICE_ROLE_KEY,
-      Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ sql: statement }),
-  });
-
-  if (!res.ok) {
-    // exec_sql RPC might not exist — fall back to the pg endpoint
-    const pgRes = await fetch(`${SUPABASE_URL}/pg`, {
-      method: "POST",
-      headers: {
-        apikey: SERVICE_ROLE_KEY,
-        Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ query: statement }),
-    });
-
-    if (!pgRes.ok) {
-      const text = await pgRes.text();
-      console.error(`FAILED:\n${statement}\n\nError: ${text}\n`);
-      console.log(
-        "\nFallback: run the SQL manually in the Supabase Dashboard SQL editor:"
-      );
-      console.log(
-        "  https://supabase.com/dashboard/project/_/sql/new\n"
-      );
-      console.log("File: supabase/migrations/20260227_avatars_storage_policies.sql\n");
-      process.exit(1);
-    }
-    console.log(`OK: ${statement.slice(0, 60)}...`);
-  } else {
-    console.log(`OK: ${statement.slice(0, 60)}...`);
-  }
+// Try to create the bucket; if it already exists that's fine.
+const { error: createError } = await supabase.storage.createBucket("avatars", {
+  public: true,
+});
+if (createError && !createError.message.includes("already exists")) {
+  console.error("Failed to create bucket:", createError.message);
+  process.exit(1);
 }
 
-console.log("\nAll policies applied successfully.");
+// Ensure the bucket is marked public (idempotent).
+const { error: updateError } = await supabase.storage.updateBucket("avatars", {
+  public: true,
+});
+if (updateError) {
+  console.error("Failed to update bucket:", updateError.message);
+  process.exit(1);
+}
+
+console.log("✓ avatars bucket is ready and public");
+console.log("\nNote: Storage upload policies are enforced server-side using the");
+console.log("service role key — no manual RLS policy setup is needed.");
