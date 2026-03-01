@@ -12,6 +12,9 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  // Only show beacons activated within the last 10 minutes
+  const cutoff = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+
   const { data, error } = await supabase
     .from("profiles")
     .select(
@@ -19,6 +22,7 @@ export async function GET() {
     )
     .eq("is_beacon_active", true)
     .neq("id", user.id)
+    .gte("beacon_activated_at", cutoff)
     .order("beacon_activated_at", { ascending: false })
     .limit(20);
 

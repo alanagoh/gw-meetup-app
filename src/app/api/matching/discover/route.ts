@@ -42,7 +42,7 @@ export async function GET(request: Request) {
   // Fetch those profiles
   let profileQuery = supabase
     .from("profiles")
-    .select("id, name, role, tags, looking_for, claude_title, photo_url, primary_tag, is_beacon_active, beacon_totem, beacon_color")
+    .select("id, name, role, tags, looking_for, claude_title, photo_url, primary_tag, is_beacon_active, beacon_activated_at, beacon_totem, beacon_color")
     .in("id", otherUserIds);
 
   if (tagFilter) {
@@ -59,6 +59,16 @@ export async function GET(request: Request) {
 
   if (!profiles) {
     return NextResponse.json({ profiles: [], total: 0 });
+  }
+
+  // Strip stale beacon status (>10 min old)
+  const beaconCutoff = Date.now() - 10 * 60 * 1000;
+  for (const p of profiles) {
+    if (p.is_beacon_active && p.beacon_activated_at) {
+      if (new Date(p.beacon_activated_at).getTime() < beaconCutoff) {
+        p.is_beacon_active = false;
+      }
+    }
   }
 
   // Merge match data back onto profiles, sort by score
