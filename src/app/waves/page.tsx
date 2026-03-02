@@ -56,11 +56,12 @@ function Avatar({ name, photo_url, primary_tag, size = 44 }: {
   );
 }
 
-function WaveRow({ profile, time, waveBack, waved }: {
+function WaveRow({ profile, time, waveBack, waved, matched }: {
   profile: WaveProfile;
   time: string;
   waveBack?: () => void;
   waved?: boolean;
+  matched?: boolean;
 }) {
   const timeAgo = formatTimeAgo(time);
 
@@ -85,7 +86,18 @@ function WaveRow({ profile, time, waveBack, waved }: {
       </div>
       <div className="flex flex-col items-end gap-1.5 shrink-0">
         <span className="text-text-secondary text-[10px]">{timeAgo}</span>
-        {waveBack && (
+        {matched ? (
+          <Link
+            href="/connections"
+            className="text-xs px-3 py-1 rounded-full font-medium"
+            style={{
+              background: "var(--accent-primary)",
+              color: "white",
+            }}
+          >
+            🤝 Matched
+          </Link>
+        ) : waveBack ? (
           <button
             onClick={waveBack}
             disabled={waved}
@@ -98,7 +110,7 @@ function WaveRow({ profile, time, waveBack, waved }: {
           >
             {waved ? "✓ Waved" : "👋 Wave back"}
           </button>
-        )}
+        ) : null}
       </div>
     </div>
   );
@@ -121,6 +133,7 @@ export default function WavesPage() {
   const [sent, setSent] = useState<Wave[]>([]);
   const [loading, setLoading] = useState(true);
   const [wavedBack, setWavedBack] = useState<Set<string>>(new Set());
+  const [matchedIds, setMatchedIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     const supabase = createClient();
@@ -132,13 +145,19 @@ export default function WavesPage() {
   useEffect(() => {
     async function load() {
       setLoading(true);
-      const [recRes, sentRes] = await Promise.all([
+      const [recRes, sentRes, connRes] = await Promise.all([
         fetch("/api/waves?type=received"),
         fetch("/api/waves?type=sent"),
+        fetch("/api/connections"),
       ]);
-      const [recData, sentData] = await Promise.all([recRes.json(), sentRes.json()]);
+      const [recData, sentData, connData] = await Promise.all([recRes.json(), sentRes.json(), connRes.json()]);
       setReceived(recData || []);
       setSent(sentData || []);
+      // Build set of matched user IDs from connections
+      const connIds = new Set<string>(
+        (Array.isArray(connData) ? connData : []).map((c: { other: { id: string } }) => c.other.id)
+      );
+      setMatchedIds(connIds);
       setLoading(false);
     }
     load();
@@ -146,11 +165,15 @@ export default function WavesPage() {
 
   const handleWaveBack = async (toUserId: string) => {
     setWavedBack((prev) => new Set([...prev, toUserId]));
-    await fetch("/api/waves", {
+    const res = await fetch("/api/waves", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ to_user: toUserId }),
     });
+    const data = await res.json();
+    if (data.mutual) {
+      setMatchedIds((prev) => new Set([...prev, toUserId]));
+    }
   };
 
   const displayList = tab === "received" ? received : sent;
@@ -220,6 +243,7 @@ export default function WavesPage() {
         {!loading && tab === "received" && received.map((w) => {
           const profile = w.from_user_profile!;
           const alreadySentWave = sent.some((s) => s.to_user_profile?.id === profile.id);
+          const isMatched = matchedIds.has(profile.id);
           return (
             <WaveRow
               key={w.id}
@@ -227,17 +251,20 @@ export default function WavesPage() {
               time={w.created_at}
               waveBack={() => handleWaveBack(profile.id)}
               waved={alreadySentWave || wavedBack.has(profile.id)}
+              matched={isMatched}
             />
           );
         })}
 
         {!loading && tab === "sent" && sent.map((w) => {
           const profile = w.to_user_profile!;
+          const isMatched = matchedIds.has(profile.id);
           return (
             <WaveRow
               key={w.id}
               profile={profile}
               time={w.created_at}
+              matched={isMatched}
             />
           );
         })}

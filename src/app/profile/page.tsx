@@ -524,9 +524,9 @@ export default function MyProfilePage() {
           >
             <label className="flex items-center justify-between cursor-pointer">
               <div>
-                <p className="text-sm font-medium">Share email on connection</p>
+                <p className="text-sm font-medium">Share email on match</p>
                 <p className="text-xs text-text-secondary mt-0.5">
-                  Only visible to mutual waves
+                  Only visible to mutual matches
                 </p>
               </div>
               <Toggle
@@ -775,7 +775,7 @@ export default function MyProfilePage() {
           </p>
           <div className="space-y-2.5">
             <div className="flex items-center justify-between">
-              <span className="text-sm">Share email on connection</span>
+              <span className="text-sm">Share email on match</span>
               <span
                 className="text-xs font-mono"
                 style={{

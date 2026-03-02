@@ -445,9 +445,9 @@ export default function OnboardingPage() {
             >
               <label className="flex items-center justify-between cursor-pointer">
                 <div>
-                  <p className="text-sm font-medium">Share email on connection</p>
+                  <p className="text-sm font-medium">Share email on match</p>
                   <p className="text-xs text-text-secondary mt-0.5">
-                    Only visible to mutual waves
+                    Only visible to mutual matches
                   </p>
                 </div>
                 <Toggle checked={shareEmail} onChange={setShareEmail} />

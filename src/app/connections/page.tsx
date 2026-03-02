@@ -193,11 +193,11 @@ export default function ConnectionsPage() {
       {/* Header */}
       <div className="sticky top-0 z-10 px-4 pt-4 pb-3" style={{ background: "var(--bg-primary)" }}>
         <h1 className="font-mono text-xl font-bold">
-          <span style={{ color: "var(--accent-primary)" }}>🤝</span> Connected
+          <span style={{ color: "var(--accent-primary)" }}>🤝</span> Matched
         </h1>
         {!loading && connections.length > 0 && (
           <p className="text-text-secondary text-xs mt-1 font-mono">
-            {connections.length} mutual connection{connections.length !== 1 ? "s" : ""}
+            {connections.length} match{connections.length !== 1 ? "es" : ""}
           </p>
         )}
       </div>
@@ -215,9 +215,9 @@ export default function ConnectionsPage() {
         {!loading && connections.length === 0 && (
           <div className="flex flex-col items-center py-16 gap-3 text-center">
             <p className="text-4xl">🤝</p>
-            <p className="font-mono font-bold">No connections yet</p>
+            <p className="font-mono font-bold">No matches yet</p>
             <p className="text-text-secondary text-sm max-w-[260px]">
-              When you and someone wave at each other, you&apos;ll connect here.
+              When you and someone wave at each other, you&apos;ll match here.
             </p>
             <Link
               href="/discover"

@@ -15,7 +15,7 @@ const STEPS = [
     icon: "👋",
     color: "#F59E0B",
     title: "Wave",
-    body: "See someone interesting? Wave at them. If they wave back, you're connected and can swap details.",
+    body: "See someone interesting? Wave at them. If they wave back, you're matched and can swap details.",
   },
   {
     icon: "◉",
@@ -32,8 +32,8 @@ const STEPS = [
   {
     icon: "🤝",
     color: "#10B981",
-    title: "Connect",
-    body: "Mutual waves become connections. See their LinkedIn, email, and chat to coordinate meeting up.",
+    title: "Match",
+    body: "Mutual waves become matches. See their LinkedIn, email, and chat to coordinate meeting up.",
   },
 ];
 

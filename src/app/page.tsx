@@ -89,7 +89,7 @@ const HOW_IT_WORKS = [
   },
   {
     step: "03",
-    title: "Wave & connect",
+    title: "Wave & match",
     desc: "Send waves. When it's mutual, swap details and go find them.",
     icon: "👋",
   },
@@ -203,7 +203,7 @@ export default function LandingPage() {
               {stats.total_connections}
             </div>
             <div className="text-text-secondary text-xs mt-0.5">
-              Connections made
+              Matches made
             </div>
           </div>
         </div>
