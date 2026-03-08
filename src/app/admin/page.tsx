@@ -35,7 +35,7 @@ export default function AdminPage() {
   useEffect(() => {
     const supabase = createClient();
     supabase.auth.getUser().then(async ({ data: { user } }) => {
-      if (!user) { router.push("/auth/login"); return; }
+      if (!user) { router.push("/auth/login?next=/admin"); return; }
       setUserId(user.id);
 
       const [{ data: owned }, { data: coAdmin }] = await Promise.all([

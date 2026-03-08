@@ -48,6 +48,13 @@ function CallbackInner() {
         userId = data.session.user.id;
       }
 
+      // If the user came from a specific page (e.g. /admin), send them back there
+      const next = searchParams.get("next");
+      if (next && next.startsWith("/")) {
+        router.push(next);
+        return;
+      }
+
       const { data: profile } = await supabase
         .from("profiles")
         .select("id")

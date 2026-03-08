@@ -28,6 +28,8 @@ export default function LoginPage() {
   const [oauthLoading, setOauthLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [cooldown, setCooldown] = useState(0);
+  // Where to send the user after login (e.g. /admin if they came from there)
+  const [nextUrl, setNextUrl] = useState("");
 
   // Restore cooldown from localStorage on mount so page refreshes don't reset it
   useEffect(() => {
@@ -38,11 +40,25 @@ export default function LoginPage() {
     }
   }, []);
 
+  // Read the ?next= param from the URL on mount (avoids useSearchParams + Suspense)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const next = params.get("next");
+    // Only allow relative paths to prevent open-redirect attacks
+    if (next && next.startsWith("/")) setNextUrl(next);
+  }, []);
+
   useEffect(() => {
     if (cooldown <= 0) return;
     const timer = setTimeout(() => setCooldown((c) => c - 1), 1000);
     return () => clearTimeout(timer);
   }, [cooldown]);
+
+  // Build the callback URL, carrying next along so the callback page knows where to redirect
+  const callbackUrl = () => {
+    const base = `${window.location.origin}/auth/callback`;
+    return nextUrl ? `${base}?next=${encodeURIComponent(nextUrl)}` : base;
+  };
 
   const handleGoogleOAuth = async () => {
     setOauthLoading(true);
@@ -52,7 +68,7 @@ export default function LoginPage() {
     const { error: authError } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: callbackUrl(),
       },
     });
 
@@ -72,7 +88,7 @@ export default function LoginPage() {
     const { error: authError } = await supabase.auth.signInWithOtp({
       email,
       options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
+        emailRedirectTo: callbackUrl(),
       },
     });
 
@@ -122,7 +138,7 @@ export default function LoginPage() {
       setLoading(false);
       return;
     }
-    router.push("/discover");
+    router.push(nextUrl || "/discover");
   };
 
   if (sent) {
