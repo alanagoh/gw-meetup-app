@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { CURRENT_SEASONS, HOPING_FOR } from "@/lib/constants";
 import { Badge } from "@/components/ui/badge";
+import { SparklesText } from "@/components/ui/sparkles-text";
 
 interface GWProfileCardProps {
   id: string;
@@ -19,6 +20,7 @@ interface GWProfileCardProps {
   waved?: boolean;
   animationDelay?: number;
   highlightTopics?: string[];
+  isTopMatch?: boolean;
 }
 
 function Avatar({ name, photo_url, size = 52 }: {
@@ -67,7 +69,7 @@ function scoreColor(score: number) {
 export default function GWProfileCard({
   id, name, work_one_liner, current_season, discussion_topics, hoping_for,
   photo_url, match_score, match_reason, conversation_starter,
-  onWave, waved, animationDelay = 0, highlightTopics = [],
+  onWave, waved, animationDelay = 0, highlightTopics = [], isTopMatch = false,
 }: GWProfileCardProps) {
   const season = CURRENT_SEASONS.find((s) => s.value === current_season);
   const hoping = HOPING_FOR.find((h) => h.value === hoping_for);
@@ -89,51 +91,76 @@ export default function GWProfileCard({
         </Link>
         <div className="flex-1 min-w-0">
           <Link href={`/profile/${id}`} className="hover:opacity-80">
-            <p className="font-semibold text-sm">{name}</p>
+            <p className="font-semibold text-base">{name}</p>
           </Link>
           {work_one_liner && (
-            <p className="text-text-secondary text-xs mt-0.5 leading-snug">{work_one_liner}</p>
+            <p className="text-text-secondary text-sm mt-0.5 leading-snug">{work_one_liner}</p>
           )}
         </div>
         {match_score !== undefined && match_score > 0 && (
-          <div className="text-right shrink-0">
-            <p className="font-mono text-lg font-bold" style={{ color: scoreColor(match_score) }}>
-              {match_score}
-            </p>
+          <div className="text-right shrink-0 relative">
+            {isTopMatch ? (
+              <div style={{ color: scoreColor(match_score) }}>
+                <SparklesText
+                  text={match_score.toString()}
+                  className="font-mono text-lg font-bold"
+                  sparklesCount={4}
+                  colors={{ first: "#dc6b2f", second: "#FE8BBB" }}
+                />
+              </div>
+            ) : (
+              <p className="font-mono text-lg font-bold" style={{ color: scoreColor(match_score) }}>
+                {match_score}
+              </p>
+            )}
             <p className="text-text-secondary text-[10px]">match</p>
           </div>
         )}
       </div>
 
-      {/* Season + hoping for */}
-      <div className="flex flex-wrap gap-1.5">
-        {season && (
+      {/* Season */}
+      {season && (
+        <div className="flex flex-wrap gap-1.5">
           <Badge variant="secondary" className="text-[11px] font-medium rounded-full">
             {season.emoji} {season.label}
           </Badge>
-        )}
-        {hoping && (
-          <Badge variant="secondary" className="text-[11px] font-medium rounded-full">
-            Wants: {hoping.label}
-          </Badge>
-        )}
-      </div>
+        </div>
+      )}
+
+      {/* Looking for */}
+      {hoping && (
+        <div className="space-y-2">
+          <p className="font-mono text-[10px] font-bold uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>
+            Looking for
+          </p>
+          <div className="flex flex-wrap gap-1.5">
+            <Badge variant="secondary" className="text-[11px] font-medium rounded-full">
+              {hoping.label}
+            </Badge>
+          </div>
+        </div>
+      )}
 
       {/* Discussion topics */}
       {discussion_topics.length > 0 && (
-        <div className="flex flex-wrap gap-1.5">
-          {discussion_topics.map((topic) => {
-            const isHighlighted = highlightTopics.includes(topic);
-            return (
-              <Badge
-                key={topic}
-                variant={isHighlighted ? "default" : "secondary"}
-                className="text-[11px] font-medium rounded-full"
-              >
-                {topic}
-              </Badge>
-            );
-          })}
+        <div className="space-y-2">
+          <p className="font-mono text-[10px] font-bold uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>
+            Topics of interest
+          </p>
+          <div className="flex flex-wrap gap-1.5">
+            {discussion_topics.map((topic) => {
+              const isHighlighted = highlightTopics.includes(topic);
+              return (
+                <Badge
+                  key={topic}
+                  variant={isHighlighted ? "default" : "secondary"}
+                  className="text-[11px] font-medium rounded-full"
+                >
+                  {topic}
+                </Badge>
+              );
+            })}
+          </div>
         </div>
       )}
 

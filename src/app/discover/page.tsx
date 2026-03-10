@@ -35,6 +35,7 @@ export default function DiscoverPage() {
   const [searchInput, setSearchInput] = useState("");
   const [wavedIds, setWavedIds] = useState<Set<string>>(new Set());
   const [checkedIn, setCheckedIn] = useState<boolean | null>(null);
+  const [mode, setMode] = useState<"matched" | "all">("matched");
 
   // Auth guard + load profile + meetup topics
   useEffect(() => {
@@ -95,6 +96,7 @@ export default function DiscoverPage() {
       const params = new URLSearchParams();
       if (topicFilter) params.set("topic", topicFilter);
       if (search) params.set("search", search);
+      params.set("mode", mode);
 
       const res = await fetch(`/api/matching/discover?${params}`);
       const { profiles: raw, checkedIn: ci } = await res.json();
@@ -104,12 +106,12 @@ export default function DiscoverPage() {
     } finally {
       setLoading(false);
     }
-  }, [checkedIn, topicFilter, search]);
+  }, [checkedIn, topicFilter, search, mode]);
 
   useEffect(() => {
     fetchProfiles();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [topicFilter, search, checkedIn]);
+  }, [topicFilter, search, checkedIn, mode]);
 
   const handleWave = async (toUserId: string) => {
     setWavedIds((prev) => new Set([...prev, toUserId]));
@@ -137,6 +139,30 @@ export default function DiscoverPage() {
       {/* Header */}
       <div className="sticky top-0 z-10 px-4 pt-4 pb-3" style={{ background: "var(--bg-primary)" }}>
         <h1 className="font-mono text-xl font-bold mb-3">Discover</h1>
+
+        {/* Mode toggle */}
+        <div className="flex gap-2 mb-3">
+          <button
+            onClick={() => setMode("matched")}
+            className="px-4 py-1.5 rounded-full text-xs font-medium capitalize transition-colors"
+            style={{
+              background: mode === "matched" ? "var(--accent-primary)" : "var(--bg-elevated)",
+              color: mode === "matched" ? "white" : "var(--text-secondary)",
+            }}
+          >
+            Matches
+          </button>
+          <button
+            onClick={() => setMode("all")}
+            className="px-4 py-1.5 rounded-full text-xs font-medium capitalize transition-colors"
+            style={{
+              background: mode === "all" ? "var(--accent-primary)" : "var(--bg-elevated)",
+              color: mode === "all" ? "white" : "var(--text-secondary)",
+            }}
+          >
+            Browse All
+          </button>
+        </div>
 
         {/* Search */}
         <form onSubmit={handleSearch} className="relative mb-3">
@@ -219,12 +245,18 @@ export default function DiscoverPage() {
           <div className="flex flex-col items-center py-16 gap-4 text-center mt-4">
             <p className="text-4xl">🔭</p>
             <p className="font-mono font-bold">
-              {search || topicFilter ? "No matches found" : "No matches yet"}
+              {search || topicFilter
+                ? "No matches found"
+                : mode === "all"
+                ? "No attendees yet"
+                : "No matches yet"}
             </p>
             <p className="text-text-secondary text-sm max-w-[260px]">
               {search || topicFilter
                 ? "Try a different filter or search term"
-                : "Matches appear once your host runs the matching. Check back soon!"}
+                : mode === "all"
+                ? "No one else has been checked in yet. Check back once more people arrive!"
+                : "Matches appear once your host runs the matching. Try 'Browse All' to see everyone who's here."}
             </p>
           </div>
         )}
@@ -254,6 +286,7 @@ export default function DiscoverPage() {
             waved={wavedIds.has(p.id)}
             animationDelay={i * 40}
             highlightTopics={highlightTopics}
+            isTopMatch={i === 0 && mode === "matched" && p.score > 0}
           />
         ))}
       </div>

@@ -16,12 +16,9 @@ export default function JoinPage() {
     const supabase = createClient();
 
     const init = async () => {
-      // Look up the meetup by invite code
-      const { data: meetup } = await supabase
-        .from("meetups")
-        .select("id, name")
-        .eq("invite_code", code)
-        .single();
+      // Look up the meetup by invite code (uses API to bypass RLS for unauthenticated users)
+      const res = await fetch(`/api/meetup/lookup?code=${encodeURIComponent(code)}`);
+      const { meetup } = await res.json();
 
       if (!meetup) {
         setStatus("not_found");

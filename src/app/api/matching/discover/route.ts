@@ -27,7 +27,49 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const topicFilter = searchParams.get("topic");
   const search = searchParams.get("search")?.toLowerCase().trim();
+  const mode = searchParams.get("mode") || "matched"; // "matched" or "all"
 
+  // MODE: "all" — Browse all checked-in attendees
+  if (mode === "all") {
+    let profileQuery = supabase
+      .from("profiles")
+      .select("id, name, work_one_liner, current_season, discussion_topics, hoping_for, photo_url, linkedin_url, linkedin_public")
+      .eq("meetup_id", myProfile.meetup_id)
+      .eq("checked_in", true)
+      .neq("id", user.id); // Exclude self
+
+    if (search) {
+      profileQuery = profileQuery.ilike("name", `%${search}%`);
+    }
+
+    const { data: profiles } = await profileQuery;
+
+    if (!profiles) {
+      return NextResponse.json({ profiles: [], total: 0, checkedIn: true, mode: "all" });
+    }
+
+    // Apply topic filter
+    let filtered = profiles;
+    if (topicFilter) {
+      filtered = profiles.filter((p) =>
+        Array.isArray(p.discussion_topics) && p.discussion_topics.includes(topicFilter)
+      );
+    }
+
+    // Add default empty match fields and sort alphabetically
+    const enriched = filtered
+      .map((p) => ({
+        ...p,
+        score: 0,
+        match_reason: "",
+        conversation_starter: "",
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+
+    return NextResponse.json({ profiles: enriched, total: enriched.length, checkedIn: true, mode: "all" });
+  }
+
+  // MODE: "matched" — Show AI-matched profiles only (default behavior)
   // Fetch matches for this user within this meetup
   const { data: matches } = await supabase
     .from("matches")
@@ -37,7 +79,7 @@ export async function GET(request: Request) {
     .order("score", { ascending: false });
 
   if (!matches || matches.length === 0) {
-    return NextResponse.json({ profiles: [], total: 0, checkedIn: true });
+    return NextResponse.json({ profiles: [], total: 0, checkedIn: true, mode: "matched" });
   }
 
   // Get the partner user IDs
@@ -60,7 +102,7 @@ export async function GET(request: Request) {
   const { data: profiles } = await profileQuery;
 
   if (!profiles) {
-    return NextResponse.json({ profiles: [], total: 0, checkedIn: true });
+    return NextResponse.json({ profiles: [], total: 0, checkedIn: true, mode: "matched" });
   }
 
   // Build match map
@@ -86,5 +128,5 @@ export async function GET(request: Request) {
     );
   }
 
-  return NextResponse.json({ profiles: enriched, total: enriched.length, checkedIn: true });
+  return NextResponse.json({ profiles: enriched, total: enriched.length, checkedIn: true, mode: "matched" });
 }

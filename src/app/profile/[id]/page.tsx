@@ -206,28 +206,38 @@ export default function PublicProfilePage() {
           )}
         </div>
 
-        {/* Season + Hoping for */}
-        {(season || hoping) && (
+        {/* Season */}
+        {season && (
           <div
             className="rounded-2xl p-4 flex flex-wrap gap-2"
             style={{ background: "var(--bg-secondary)", border: "1px solid var(--border-subtle)" }}
           >
-            {season && (
+            <span
+              className="text-xs px-3 py-1 rounded-full font-medium"
+              style={{ background: "var(--bg-elevated)", color: "var(--text-secondary)" }}
+            >
+              {season.emoji} {season.label}
+            </span>
+          </div>
+        )}
+
+        {/* Looking for */}
+        {hoping && (
+          <div
+            className="rounded-2xl p-4"
+            style={{ background: "var(--bg-secondary)", border: "1px solid var(--border-subtle)" }}
+          >
+            <p className="font-mono text-xs font-bold mb-3" style={{ color: "var(--text-secondary)" }}>
+              LOOKING FOR
+            </p>
+            <div className="flex flex-wrap gap-2">
               <span
                 className="text-xs px-3 py-1 rounded-full font-medium"
                 style={{ background: "var(--bg-elevated)", color: "var(--text-secondary)" }}
               >
-                {season.emoji} {season.label}
+                {hoping.label}
               </span>
-            )}
-            {hoping && (
-              <span
-                className="text-xs px-3 py-1 rounded-full font-medium"
-                style={{ background: "var(--bg-elevated)", color: "var(--text-secondary)" }}
-              >
-                Looking for: {hoping.label}
-              </span>
-            )}
+            </div>
           </div>
         )}
 
