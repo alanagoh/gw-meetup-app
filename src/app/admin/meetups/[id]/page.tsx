@@ -75,6 +75,9 @@ export default function MeetupAdminPage() {
   const [matchResult, setMatchResult] = useState<string | null>(null);
   const [matchDialogOpen, setMatchDialogOpen] = useState(false);
 
+  // Auto-match status
+  const [autoMatchStatus, setAutoMatchStatus] = useState<string | null>(null);
+
   // Co-admin management
   const [newCoAdminEmail, setNewCoAdminEmail] = useState("");
   const [coAdminSaving, setCoAdminSaving] = useState(false);
@@ -170,18 +173,32 @@ export default function MeetupAdminPage() {
 
       // Auto-match when checking IN (not when unchecking)
       if (!current) {
+        setAutoMatchStatus("Matching...");
         fetch("/api/admin/match-meetup", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ meetup_id: meetupId, user_id: participantId }),
-        }).catch(() => {
-          // Matching failed silently — admin can manually re-run later
-        });
+        })
+          .then(async (res) => {
+            if (res.ok) {
+              const data = await res.json();
+              setAutoMatchStatus(`Matched — ${data.pairs} pairs`);
+            } else {
+              const data = await res.json().catch(() => ({ error: "Unknown error" }));
+              setAutoMatchStatus(`Match error: ${data.error}`);
+            }
+            setTimeout(() => setAutoMatchStatus(null), 4000);
+          })
+          .catch(() => {
+            setAutoMatchStatus("Matching failed — try manual matching later");
+            setTimeout(() => setAutoMatchStatus(null), 4000);
+          });
       }
     }
   };
 
   const runMatching = async () => {
+    setMatchDialogOpen(false);
     setMatching(true);
     setMatchResult(null);
     try {
@@ -366,9 +383,14 @@ export default function MeetupAdminPage() {
         title={`Participants (${participants.length})`}
         subtitle={`${checkedInCount} checked in`}
       >
-        <p className="text-text-secondary text-xs mb-3">
+        <p className="text-text-secondary text-xs mb-2">
           Checking someone in automatically matches them with everyone already here.
         </p>
+        {autoMatchStatus && (
+          <p className="text-xs mb-3" style={{ color: autoMatchStatus.includes("error") || autoMatchStatus.includes("failed") ? "rgb(248,113,113)" : "rgb(34,197,94)" }}>
+            {autoMatchStatus}
+          </p>
+        )}
         {participants.length === 0 ? (
           <p className="text-text-secondary text-sm">No one has registered yet.</p>
         ) : (
@@ -433,7 +455,13 @@ export default function MeetupAdminPage() {
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={runMatching} className="bg-accent-primary hover:bg-accent-primary/90">
+              <AlertDialogAction
+                onClick={(e) => {
+                  e.preventDefault();
+                  runMatching();
+                }}
+                className="bg-accent-primary hover:bg-accent-primary/90"
+              >
                 Run matching
               </AlertDialogAction>
             </AlertDialogFooter>
